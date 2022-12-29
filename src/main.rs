@@ -1,32 +1,38 @@
-//use dirs::home_dir;
-// use std::collections::HashMap;
 use std::fs::File;
 use std::io;
-use std::io::{BufReader};
+use std::io::{BufRead, BufReader};
 use std::io::Write;
-//use std::fs;
 use std::path::PathBuf;
 use std::string::String;
 use std::io::Read;
 use dirs::home_dir;
-
+use std::collections::HashMap;
 
 
 fn main() {
 
     let mut path: PathBuf = home_dir().unwrap();
+    let  dic: HashMap<String, String>;
     path.push(".config/secret.pwd");
     let args: Vec<String> = std::env::args().collect();
     let query = &args[1].to_string();
     if query == "n" {
-       store_data(&path); } else { println!("nothing to do"); }
+        store_data(path.clone()) }
+    else if query == "s" {
+       // println!("enter the key");
+        let key = new_key();
+
+        dic = file_to_hash(path);
+        let passwd = dic.get(&key);
+        match passwd {
+            Some(pwd) => println!("password : {}",pwd),
+            None => println!("Identifiant inconnu !")
+        }
+    }
 }
 
-
-fn store_data(path: &PathBuf) {
+fn store_data(path: PathBuf) {
     let key: String = new_key();
-
-
     let repository: Vec<String> = read_file(path.clone());
     for  data in repository {
         let  stored_key = data.split("$").next().unwrap();
@@ -42,8 +48,8 @@ fn store_data(path: &PathBuf) {
 }
 
 fn new_key() -> String {
-let mut key = String::new();
-println!(" enter site/computer name ");
+    let mut key = String::new();
+    println!(" enter site/computer name ");
     io::stdin()
         .read_line(&mut key)
         .expect("unable to read user input ");
@@ -57,7 +63,7 @@ fn new_passwd() -> String {
     io::stdin()
         .read_line(&mut passwd)
         .expect("unable to read user input ");
-    passwd.pop();
+    //passwd.pop();
     passwd
 }
 
@@ -109,25 +115,27 @@ fn read_file(path: PathBuf) -> Vec<String> {
 
 
 
-// fn file_to_hash(path: PathBuf) -> HashMap<String, String> {
-//     let mut passwd_dic: HashMap<String, String> = HashMap::new();
-//     // let content = fs::read_to_string(&path).expect("error");
-//     //  println!(" with text:\n{content} ");
-//     //  println!("content :\n {}", content);
-//     let f = File::open(&path).expect("error");
-//     let reader = BufReader::new(f);
-//     for line in reader.lines() {
-//         match line {
-//             Ok(line) => {
-//                 let mut iter = line.split("$");
-//                 let key = &iter.next().unwrap();
-//                 let value = &iter.next().unwrap();
-//                 println!("key = {} value = {}", key, value);
-//                 passwd_dic.insert(key.to_string(), value.to_string());
-//             }
+fn file_to_hash(path: PathBuf) -> HashMap<String, String> {
+    let mut passwd_dic: HashMap<String, String> = HashMap::new();
+    // let content = fs::read_to_string(&path).expect("error");
+    //  println!(" with text:\n{content} ");
+    //  println!("content :\n {}", content);
+    let f = File::open(&path).expect("error");
+    let   reader = BufReader::new(f);
+ //   let  line = String::new();
 
-//             Err(e) => println!("{}", e),
-//         }
-//     }
-//     passwd_dic
-// }
+    for line in reader.lines() {
+        match line {
+            Ok(line) => {
+                let mut iter = line.split("$");
+                let key = &iter.next().unwrap();
+                let value = &iter.next().unwrap();
+               // println!("key = {} value = {}", key, value);
+                passwd_dic.insert(key.to_string(), value.to_string());
+            }
+
+            Err(e) => println!("{}", e),
+        }
+    }
+    passwd_dic
+}
