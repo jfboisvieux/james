@@ -16,10 +16,11 @@ fn main() {
     path.push(".config/secret.pwd");
     let args: Vec<String> = std::env::args().collect();
     let query = &args[1].to_string();
+
+
     if query == "n" {
         store_data(path.clone()) }
     else if query == "s" {
-       // println!("enter the key");
         let key = new_key();
 
         dic = file_to_hash(path);
@@ -29,7 +30,14 @@ fn main() {
             None => println!("Identifiant inconnu !")
         }
     }
+    else if query == "all" {
+        for (key, value) in file_to_hash(path){
+            println!("{} : {}", key, value);
+        }
+    }
 }
+
+
 
 fn store_data(path: PathBuf) {
     let key: String = new_key();
@@ -63,7 +71,6 @@ fn new_passwd() -> String {
     io::stdin()
         .read_line(&mut passwd)
         .expect("unable to read user input ");
-    //passwd.pop();
     passwd
 }
 
@@ -104,7 +111,6 @@ fn read_file(path: PathBuf) -> Vec<String> {
     else {
         let _ = File::create(&path);
     }
-
     output_vector_of_string = output_string.split("\n").map(|s| s.to_string()).collect::<Vec<String>>();
     output_vector_of_string
 
@@ -113,16 +119,10 @@ fn read_file(path: PathBuf) -> Vec<String> {
 
 
 
-
-
 fn file_to_hash(path: PathBuf) -> HashMap<String, String> {
     let mut passwd_dic: HashMap<String, String> = HashMap::new();
-    // let content = fs::read_to_string(&path).expect("error");
-    //  println!(" with text:\n{content} ");
-    //  println!("content :\n {}", content);
     let f = File::open(&path).expect("error");
     let   reader = BufReader::new(f);
- //   let  line = String::new();
 
     for line in reader.lines() {
         match line {
@@ -130,7 +130,7 @@ fn file_to_hash(path: PathBuf) -> HashMap<String, String> {
                 let mut iter = line.split("$");
                 let key = &iter.next().unwrap();
                 let value = &iter.next().unwrap();
-               // println!("key = {} value = {}", key, value);
+                // println!("key = {} value = {}", key, value);
                 passwd_dic.insert(key.to_string(), value.to_string());
             }
 
