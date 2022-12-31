@@ -15,25 +15,25 @@ fn main() {
     let  dic: HashMap<String, String>;
     path.push(".config/secret.pwd");
     let args: Vec<String> = std::env::args().collect();
-    let query = &args[1].to_string();
+    let query = args[1].as_str();
 
-
-    if query == "n" {
-        store_data(path.clone()) }
-    else if query == "s" {
-        let key = new_key();
-
-        dic = file_to_hash(path);
-        let passwd = dic.get(&key);
-        match passwd {
-            Some(pwd) => println!("password : {}",pwd),
-            None => println!("Identifiant inconnu !")
+    match query {
+        "new" => store_data(path.clone()),
+        "search" => {
+            let key = new_key();
+            dic = file_to_hash(path);
+            let passwd = dic.get(&key);
+            match passwd {
+                Some(pwd) => println!("{pwd}"),
+                None => println!("Identifiant inconnu !"),
+            }
         }
-    }
-    else if query == "all" {
-        for (key, value) in file_to_hash(path){
-            println!("{} : {}", key, value);
+        "view-all" => {
+            for (key, value) in file_to_hash(path){
+                println!("{} : {}", key, value);
+            }
         }
+        _ => println!("options: new search or view-all ")
     }
 }
 
