@@ -1,20 +1,44 @@
+use dirs::home_dir;
+use pancurses::{endwin, initscr};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io;
-use std::io::{BufRead, BufReader};
+use std::io::Read;
 use std::io::Write;
+use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::string::String;
-use std::io::Read;
-use dirs::home_dir;
-use std::collections::HashMap;
 
+enum Options {
+    New,
+    Search,
+    All,
+}
+
+impl Options {
+    fn as_str(&self) -> &'static str {
+        match self {
+            Options::New => "new",
+            Options::Search => "search",
+            Options::All => "all",
+        }
+    }
+}
 
 fn main() {
+    //  display_options();
+    run();
+}
 
+fn run() {
     let mut path: PathBuf = home_dir().unwrap();
-    let  dic: HashMap<String, String>;
-    path.push(".config/secret.pwd");
+    let dic: HashMap<String, String>;
+    path.push(".config/pwd");
     let args: Vec<String> = std::env::args().collect();
+    if args.len() == 1 {
+        display_options();
+        return;
+    }
     let query = args[1].as_str();
 
     match query {
@@ -28,22 +52,20 @@ fn main() {
                 None => println!("Identifiant inconnu !"),
             }
         }
-        "view-all" => {
-            for (key, value) in file_to_hash(path){
+        "all" => {
+            for (key, value) in file_to_hash(path) {
                 println!("{} : {}", key, value);
             }
         }
-        _ => println!("options: new search or view-all ")
+        _ => display_options(),
     }
 }
-
-
 
 fn store_data(path: PathBuf) {
     let key: String = new_key();
     let repository: Vec<String> = read_file(path.clone());
-    for  data in repository {
-        let  stored_key = data.split("$").next().unwrap();
+    for data in repository {
+        let stored_key = data.split("$").next().unwrap();
         if key == stored_key {
             println!("This identifier has a stored password");
             return;
@@ -51,7 +73,7 @@ fn store_data(path: PathBuf) {
     }
     let passwd = new_passwd();
     let mut new_key_passwd = key.to_string() + &"$".to_string();
-    new_key_passwd = new_key_passwd +    &passwd.to_string();
+    new_key_passwd = new_key_passwd + &passwd.to_string();
     save_to_file(&path, new_key_passwd);
 }
 
@@ -74,7 +96,6 @@ fn new_passwd() -> String {
     passwd
 }
 
-
 fn save_to_file(path: &PathBuf, new_data: String) {
     if path.exists() {
         let mut f = File::options()
@@ -93,36 +114,30 @@ fn save_to_file(path: &PathBuf, new_data: String) {
     }
 }
 
-
-
 fn read_file(path: PathBuf) -> Vec<String> {
-    let mut output_string =  String::new();
+    let mut output_string = String::new();
     let output_vector_of_string: Vec<String>;
     if path.exists() {
-        let f  = File::options()
-            .read(true)
-            .open(&path)
-            .unwrap();
+        let f = File::options().read(true).open(&path).unwrap();
 
         let mut buffer_reader = BufReader::new(f);
-        buffer_reader.read_to_string(&mut output_string).expect("unable to read ");
-
-    }
-    else {
+        buffer_reader
+            .read_to_string(&mut output_string)
+            .expect("unable to read file");
+    } else {
         let _ = File::create(&path);
     }
-    output_vector_of_string = output_string.split("\n").map(|s| s.to_string()).collect::<Vec<String>>();
+    output_vector_of_string = output_string
+        .split("\n")
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>();
     output_vector_of_string
-
 }
-
-
-
 
 fn file_to_hash(path: PathBuf) -> HashMap<String, String> {
     let mut passwd_dic: HashMap<String, String> = HashMap::new();
     let f = File::open(&path).expect("error");
-    let   reader = BufReader::new(f);
+    let reader = BufReader::new(f);
 
     for line in reader.lines() {
         match line {
@@ -138,4 +153,16 @@ fn file_to_hash(path: PathBuf) -> HashMap<String, String> {
         }
     }
     passwd_dic
+}
+
+fn display_options() {
+    let window = initscr();
+    window.printw(Options::as_str(&Options::New));
+    window.printw("\n");
+    window.printw(Options::as_str(&Options::Search));
+    window.printw("\n");
+    window.printw(Options::as_str(&Options::All));
+    window.refresh();
+    window.getch();
+    endwin();
 }
