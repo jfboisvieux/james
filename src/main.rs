@@ -1,4 +1,8 @@
+#[macro_use]
+extern crate magic_crypt;
+
 use dirs::home_dir;
+use magic_crypt::MagicCryptTrait;
 use pancurses::{endwin, initscr};
 use std::collections::HashMap;
 use std::fs::File;
@@ -10,7 +14,7 @@ use std::path::PathBuf;
 use std::string::String;
 
 enum Options {
-    New,
+    Add,
     Search,
     All,
 }
@@ -18,23 +22,29 @@ enum Options {
 impl Options {
     fn as_str(&self) -> &'static str {
         match self {
-            Options::New => "new",
+            Options::Add => "new",
             Options::Search => "search",
             Options::All => "all",
         }
     }
 }
 
+fn set_path() -> PathBuf {
+    let home_path = home_dir().unwrap();
+    let relative_path = PathBuf::from(".config/pwd");
+    let path = home_path.join(relative_path);
+    path
+}
+
 fn main() {
-    //  display_options();
     run();
 }
 
 fn run() {
-    let mut path: PathBuf = home_dir().unwrap();
+    let path = set_path();
     let dic: HashMap<String, String>;
-    path.push(".config/pwd");
     let args: Vec<String> = std::env::args().collect();
+
     if args.len() == 1 {
         display_options();
         return;
@@ -157,7 +167,7 @@ fn file_to_hash(path: PathBuf) -> HashMap<String, String> {
 
 fn display_options() {
     let window = initscr();
-    window.printw(Options::as_str(&Options::New));
+    window.printw(Options::as_str(&Options::Add));
     window.printw("\n");
     window.printw(Options::as_str(&Options::Search));
     window.printw("\n");
@@ -165,4 +175,16 @@ fn display_options() {
     window.refresh();
     window.getch();
     endwin();
+}
+
+fn encrypt(line: &str, pwd: &str) -> String {
+    let mc = new_magic_crypt!(pwd, 256);
+    let base64 = mc.encrypt_str_to_base64(line);
+    base64
+}
+
+fn decrypt(input: &str, pwd: &str) -> String {
+    let mc = new_magic_crypt!(pwd, 256);
+    let output = mc.decrypt_base64_to_string(input).unwrap();
+    output
 }
